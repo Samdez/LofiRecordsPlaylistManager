@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
 import { AuthModule } from 'src/Auth/auth.module';
 import { SpotifyAPIModule } from 'src/SpotifyAPI/spotifyApi.module';
+import { PlaylistService } from './playlist.service';
 
 @Module({
   imports: [AuthModule, SpotifyAPIModule],
   controllers: [],
-  providers: [UserService],
-  exports: [UserService],
+  providers: [PlaylistService],
+  exports: [PlaylistService],
 })
-export class UserModule {}
+export class PlaylistModule {}

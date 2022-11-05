@@ -1,9 +1,15 @@
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
+import { PlaylistService } from './Playlist/playlist.service';
+import { UserService } from './User/user.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly userService: UserService,
+    private readonly playlistService: PlaylistService,
+  ) {}
 
   @Get()
   startProcess() {
@@ -12,11 +18,11 @@ export class AppController {
 
   @Get('me')
   getMe() {
-    return this.appService.getUser();
+    return this.userService.getUser();
   }
 
   @Get('playlists')
   getPlaylists() {
-    return this.appService.getUserPlaylists();
+    return this.playlistService.getUserPlaylists();
   }
 }
