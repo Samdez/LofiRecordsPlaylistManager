@@ -22,7 +22,7 @@ export class SpotifyAPIService {
     this.spotifyApi = new SpotifyWebApi({
       clientId: this.config.get('CLIENT_ID'),
       clientSecret: this.config.get('CLIENT_SECRET'),
-      redirectUri: 'http://www.example.com/callback',
+      redirectUri: 'https://www.example.com/callback',
       accessToken:
         this.spotifyApi?._credentials.accessToken ||
         this.config.get('ACCESS_TOKEN'),

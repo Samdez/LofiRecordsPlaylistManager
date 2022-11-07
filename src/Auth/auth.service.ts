@@ -8,7 +8,24 @@ export class AuthService {
   public config: ConfigService;
   constructor(private readonly spotifyApiService: SpotifyAPIService) {}
 
+  async getCode() {
+    this.spotifyApiService.initClient();
+    const res = this.spotifyApiService.spotifyApi.createAuthorizeURL(
+      [
+        'playlist-read-private',
+        'playlist-read-collaborative',
+        'playlist-modify-private',
+        'playlist-modify-public',
+      ],
+      '',
+    );
+    console.log(res);
+  }
+
   async grantAuthorization() {
+    console.log('ok');
+    this.spotifyApiService.initClient();
+
     this.spotifyApiService.spotifyApi
       .authorizationCodeGrant(this.config.get('SPOTIFY_ACCESS_CODE'))
       .then((data) => {
