@@ -14,7 +14,7 @@ export class AppService {
     private spotifyApiService: SpotifyAPIService,
   ) {}
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_HOUR)
   async startProcess() {
     this.spotifyApiService.initClient();
     const promotionOnePlaylistId = this.config.get('PROMOTION_ONE_PLAYLIST_ID');
