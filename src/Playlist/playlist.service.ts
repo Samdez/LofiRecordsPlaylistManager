@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from 'src/Auth/auth.service';
 import { SpotifyAPIService } from 'src/SpotifyAPI/spotifyApi.service';
@@ -159,7 +159,10 @@ export class PlaylistService {
         await this.updateMainPlaylist(tracksUris);
         console.log('End of the process');
       } catch (error) {
-        throw new Error(error.message);
+        throw new HttpException(
+          error.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
       }
     }
   }
@@ -235,41 +238,70 @@ export class PlaylistService {
     const quotient = Math.floor(playlistLength / 100);
     const remainder = playlistLength % 100;
     for (let i = 0; i < quotient; i++) {
-      const arr = [];
-      for (let j = 0; j < 100; j++) {
-        arr.push(j);
-      }
-      const res =
-        await this.spotifyApiService.spotifyApi.removeTracksFromPlaylistByPosition(
-          this.config.get('MAIN_PLAYLIST_ID'),
-          arr,
-          snapshot_id,
+      try {
+        const arr = [];
+        for (let j = 0; j < 100; j++) {
+          arr.push(j);
+        }
+        const res =
+          await this.spotifyApiService.spotifyApi.removeTracksFromPlaylistByPosition(
+            this.config.get('MAIN_PLAYLIST_ID'),
+            arr,
+            snapshot_id,
+          );
+        snapshot_id = res.body.snapshot_id;
+      } catch (error) {
+        throw new HttpException(
+          error.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
         );
-      snapshot_id = res.body.snapshot_id;
+      }
     }
     if (remainder) {
-      const arr = [];
-      for (let j = 0; j < remainder; j++) {
-        arr.push(j);
-      }
-      const res =
-        await this.spotifyApiService.spotifyApi.removeTracksFromPlaylistByPosition(
-          this.config.get('MAIN_PLAYLIST_ID'),
-          arr,
-          snapshot_id,
+      try {
+        const arr = [];
+        for (let j = 0; j < remainder; j++) {
+          arr.push(j);
+        }
+        const res =
+          await this.spotifyApiService.spotifyApi.removeTracksFromPlaylistByPosition(
+            this.config.get('MAIN_PLAYLIST_ID'),
+            arr,
+            snapshot_id,
+          );
+        snapshot_id = res.body.snapshot_id;
+      } catch (error) {
+        throw new HttpException(
+          error.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
         );
-      snapshot_id = res.body.snapshot_id;
+      }
     }
     console.log('playlist deleted');
 
     for (let i = 0; i < 5; i++) {
-      const tracksToAdd = tracksUris.slice(0, 100);
-      const res2 = await this.spotifyApiService.spotifyApi.addTracksToPlaylist(
-        this.config.get('MAIN_PLAYLIST_ID'),
-        tracksToAdd,
-      );
-      snapshot_id = res2.body.snapshot_id;
-      tracksUris = tracksUris.slice(100);
+      try {
+        const tracksToAdd = tracksUris.slice(0, 100);
+        let res2: any;
+        try {
+          res2 = await this.spotifyApiService.spotifyApi.addTracksToPlaylist(
+            this.config.get('MAIN_PLAYLIST_ID'),
+            tracksToAdd,
+          );
+        } catch (error) {
+          throw new HttpException(
+            error.message,
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }
+        snapshot_id = res2.body.snapshot_id;
+        tracksUris = tracksUris.slice(100);
+      } catch (error) {
+        throw new HttpException(
+          error.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
     console.log('Playlist updated!');
   }

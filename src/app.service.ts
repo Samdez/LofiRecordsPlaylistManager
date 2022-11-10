@@ -15,7 +15,7 @@ export class AppService {
   ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
-  async startProcess() {
+  async startProcess(numOfRetrys = 0) {
     this.spotifyApiService.initClient();
     const promotionOnePlaylistId = this.config.get('PROMOTION_ONE_PLAYLIST_ID');
     const promotionTwoPlaylistId = this.config.get('PROMOTION_TWO_PLAYLIST_ID');
@@ -48,16 +48,24 @@ export class AppService {
       throw new Error(error.message);
     }
 
-    await this.playlistService.organizePlaylist(
-      promotionOneTracks,
-      promotionTwoTracks,
-      compilationTracks,
-      favoritesTracks,
-      releasesTracks.filter(
-        (track) =>
-          new Date(track.track.album.release_date).getTime() <
-          new Date('2022-05-21').getTime(),
-      ),
-    );
+    try {
+      await this.playlistService.organizePlaylist(
+        promotionOneTracks,
+        promotionTwoTracks,
+        compilationTracks,
+        favoritesTracks,
+        releasesTracks.filter(
+          (track) =>
+            new Date(track.track.album.release_date).getTime() <
+            new Date('2022-05-21').getTime(),
+        ),
+      );
+    } catch (error) {
+      numOfRetrys++;
+      console.log(error.message);
+      if (numOfRetrys <= 10) {
+        this.startProcess(numOfRetrys);
+      }
+    }
   }
 }
