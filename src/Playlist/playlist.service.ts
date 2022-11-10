@@ -227,10 +227,29 @@ export class PlaylistService {
   }
 
   async updateMainPlaylist(tracksUris: string[]) {
-    let { snapshot_id } = await this.getPlaylist();
-    for (let i = 0; i < 5; i++) {
+    let {
+      snapshot_id,
+      // eslint-disable-next-line prefer-const
+      tracks: { total: playlistLength },
+    } = await this.getPlaylist();
+    const quotient = Math.floor(playlistLength / 100);
+    const remainder = playlistLength % 100;
+    for (let i = 0; i < quotient; i++) {
       const arr = [];
       for (let j = 0; j < 100; j++) {
+        arr.push(j);
+      }
+      const res =
+        await this.spotifyApiService.spotifyApi.removeTracksFromPlaylistByPosition(
+          this.config.get('MAIN_PLAYLIST_ID'),
+          arr,
+          snapshot_id,
+        );
+      snapshot_id = res.body.snapshot_id;
+    }
+    if (remainder) {
+      const arr = [];
+      for (let j = 0; j < remainder; j++) {
         arr.push(j);
       }
       const res =
@@ -417,13 +436,11 @@ export class PlaylistService {
       let isUnderLimit = true;
       for (let j = 0; j < artists.length; j++) {
         if (
-          newArtistsTrackCount[artists[j].id]?.points >
+          newArtistsTrackCount[artists[j].id]?.points >=
           this.config.get('MAX_NUMBER_OF_POINTS_PER_ARTIST')
         ) {
           isUnderLimit = false;
-          return;
-        }
-        if (!newArtistsTrackCount[artists[j].id]) {
+        } else if (!newArtistsTrackCount[artists[j].id]) {
           isCollab
             ? (newArtistsTrackCount[artists[j].id] = {
                 points: 0.5,

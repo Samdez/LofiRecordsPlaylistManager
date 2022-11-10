@@ -13,7 +13,7 @@
         "-r",
         "tsconfig-paths/register"
       ],
-      // "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeExecutable": "/usr/local/bin/node",
       "sourceMaps": true,
       // "envFile": "${workspaceFolder}/.env",
       "cwd": "${workspaceRoot}",
