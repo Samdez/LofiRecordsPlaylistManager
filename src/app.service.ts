@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -16,43 +16,34 @@ export class AppService {
 
   @Cron(CronExpression.EVERY_HOUR)
   async startProcess(numOfRetrys = 0) {
-    this.spotifyApiService.initClient();
-    const promotionOnePlaylistId = this.config.get('PROMOTION_ONE_PLAYLIST_ID');
-    const promotionTwoPlaylistId = this.config.get('PROMOTION_TWO_PLAYLIST_ID');
-    const compilationPlaylistId = this.config.get('COMPILATION_PLAYLIST_ID');
-    const favoritesPlaylistId = this.config.get('FAVORITES_PLAYLIST_ID');
-    const releasesPlaylistId = this.config.get('RELEASES_PLAYLIST_ID');
-
-    let promotionOneTracks: SpotifyApi.PlaylistTrackObject[],
-      promotionTwoTracks: SpotifyApi.PlaylistTrackObject[],
-      compilationTracks: SpotifyApi.PlaylistTrackObject[],
-      favoritesTracks: SpotifyApi.PlaylistTrackObject[],
-      releasesTracks: SpotifyApi.PlaylistTrackObject[];
     try {
-      promotionOneTracks = await this.playlistService.getPlaylistTracks(
+      this.spotifyApiService.initClient();
+      const promotionOnePlaylistId = this.config.get(
+        'PROMOTION_ONE_PLAYLIST_ID',
+      );
+      const promotionTwoPlaylistId = this.config.get(
+        'PROMOTION_TWO_PLAYLIST_ID',
+      );
+      const compilationPlaylistId = this.config.get('COMPILATION_PLAYLIST_ID');
+      const favoritesPlaylistId = this.config.get('FAVORITES_PLAYLIST_ID');
+      const releasesPlaylistId = this.config.get('RELEASES_PLAYLIST_ID');
+
+      const promotionOneTracks = await this.playlistService.getPlaylistTracks(
         promotionOnePlaylistId,
       );
-      promotionTwoTracks = await this.playlistService.getPlaylistTracks(
+      const promotionTwoTracks = await this.playlistService.getPlaylistTracks(
         promotionTwoPlaylistId,
       );
-      compilationTracks = await this.playlistService.getPlaylistTracks(
+      const compilationTracks = await this.playlistService.getPlaylistTracks(
         compilationPlaylistId,
       );
-      favoritesTracks = await this.playlistService.getPlaylistTracks(
+      const favoritesTracks = await this.playlistService.getPlaylistTracks(
         favoritesPlaylistId,
       );
-      releasesTracks = await this.playlistService.getPlaylistTracks(
+      const releasesTracks = await this.playlistService.getPlaylistTracks(
         releasesPlaylistId,
       );
-    } catch (error) {
-      numOfRetrys++;
-      console.log(error.message);
-      if (numOfRetrys <= 10) {
-        this.startProcess(numOfRetrys);
-      }
-    }
 
-    try {
       await this.playlistService.organizePlaylist(
         promotionOneTracks,
         promotionTwoTracks,
@@ -69,6 +60,8 @@ export class AppService {
       console.log(error.message);
       if (numOfRetrys <= 10) {
         this.startProcess(numOfRetrys);
+      } else {
+        throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }

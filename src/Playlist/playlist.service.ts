@@ -77,7 +77,7 @@ export class PlaylistService {
       promises.push(promise);
     }
     const rawSongData = await Promise.all(promises);
-    let songs = [];
+    let songs: SpotifyApi.PlaylistTrackObject[] = [];
     for (let i = 0; i < rawSongData.length; i++) {
       songs = songs.concat(rawSongData[i].body.items);
     }
