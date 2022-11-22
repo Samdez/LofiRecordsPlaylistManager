@@ -290,6 +290,16 @@ export class PlaylistService {
         favoritesTracks,
         releasesTracks,
       );
+    } else if (tracksUris.length < 500) {
+      console.log('Not enough tracks!');
+
+      await this.organizePlaylist(
+        promotionOneTracks,
+        promotionTwoTracks,
+        compilationTracks,
+        favoritesTracks,
+        releasesTracks,
+      );
     } else {
       try {
         await this.updateMainPlaylist(tracksUris);
