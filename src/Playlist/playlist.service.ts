@@ -84,152 +84,24 @@ export class PlaylistService {
     return songs;
   }
 
-  async organizePlaylistV2(
-    promotionOneTracks: SpotifyApi.PlaylistTrackObject[],
-    promotionTwoTracks: SpotifyApi.PlaylistTrackObject[],
-    compilationTracks: SpotifyApi.PlaylistTrackObject[],
-    favoritesTracks: SpotifyApi.PlaylistTrackObject[],
-    releasesTracks: SpotifyApi.PlaylistTrackObject[],
-  ) {
-    const shuffledFavoritesTracks = this.shuffleTracks(favoritesTracks);
-    const shuffledReleasesTracks = this.shuffleTracks(releasesTracks);
-
-    // Separates active and inactive tracks
-    const activeP1Tracks = this.filterTracksPerDaysSinceReleaseDate(
-      promotionOneTracks,
-      this.config.get('DAYS_IN_FIRST_CATEGORY_FOR_PROMOTION_ONE'),
-      'before',
-    );
-    const inactiveP1tracks = promotionOneTracks.filter(
-      (track) => !activeP1Tracks.includes(track),
-    );
-    const activeP2Tracks = this.filterTracksPerDaysSinceReleaseDate(
-      promotionTwoTracks,
-      this.config.get('DAYS_IN_FIRST_CATEGORY_FOR_PROMOTION_TWO'),
-      'before',
-    );
-    const inactiveP2tracks = promotionTwoTracks.filter(
-      (track) => !activeP2Tracks.includes(track),
-    );
-    const activeCompTracks = this.filterTracksPerDaysSinceReleaseDate(
-      compilationTracks,
-      this.config.get('DAYS_IN_FIRST_CATEGORY_FOR_COMPILATION'),
-      'before',
-    );
-    const inactiveComptracks = compilationTracks.filter(
-      (track) => !activeCompTracks.includes(track),
-    );
-
-    // Get tracks for Cat 1
-    const [artistsCountForP1] =
-      this.createOrUpdateArtistTrackCount(activeCompTracks);
-
-    // Gets Cat 2 tracks
-    const selectedCategoryTwoTracksFromPlaylistOne =
-      this.getNRandomTracksPerAlbum(inactiveP1tracks, 1);
-    const [countAfterC2P1] = this.createOrUpdateArtistTrackCount(
-      selectedCategoryTwoTracksFromPlaylistOne,
-      artistsCountForP1,
-    );
-    const selectedCategoryTwoTracksFromPlaylistTwo =
-      this.getNRandomTracksPerAlbum(inactiveP2tracks, 1);
-    const [countAfterC2P2] = this.createOrUpdateArtistTrackCount(
-      selectedCategoryTwoTracksFromPlaylistTwo,
-      countAfterC2P1,
-    );
-    const selectedCategoryTwoTracksFromComp = this.shuffleTracks(
-      inactiveComptracks,
-    ).slice(0, 50);
-    const [countAfterC2Comp] = this.createOrUpdateArtistTrackCount(
-      selectedCategoryTwoTracksFromComp,
-      countAfterC2P2,
-    );
-
-    // add fav to cat1
-    const numberOfFavoritesToAdd =
-      170 -
-      (activeP1Tracks.length + activeP2Tracks.length + activeCompTracks.length);
-    const [artistTrackCountForCat1withFavs, favTracksToAddToCatOne] =
-      this.createOrUpdateArtistTrackCount(
-        shuffledFavoritesTracks,
-        countAfterC2Comp,
-        numberOfFavoritesToAdd,
-      );
-    const remainingFavorites = shuffledFavoritesTracks.filter(
-      (track) => !favTracksToAddToCatOne.includes(track),
-    );
-    const cat1 = this.shuffleTracks([
-      ...activeP1Tracks,
-      ...activeP2Tracks,
-      ...activeCompTracks,
-      ...favTracksToAddToCatOne,
-    ]);
-
-    // add fav and releases to cat2
-    const cat2FavTracks = remainingFavorites.slice(0, 55);
-    const [artistTrackCountForCat2withFavs, favTracksToAddToCat2] =
-      this.createOrUpdateArtistTrackCount(
-        cat2FavTracks,
-        artistTrackCountForCat1withFavs,
-      );
-    const numberOfReleasesToAddToCat2 =
-      330 -
-      (selectedCategoryTwoTracksFromPlaylistOne.length +
-        selectedCategoryTwoTracksFromPlaylistTwo.length +
-        50 +
-        55);
-    const [artistTrackCountForCat1withcat2, releasesTracksToAddToCat2] =
-      this.createOrUpdateArtistTrackCount(
-        shuffledReleasesTracks,
-        artistTrackCountForCat2withFavs,
-        numberOfReleasesToAddToCat2,
-      );
-    const cat2 = this.shuffleTracks([
-      ...selectedCategoryTwoTracksFromPlaylistOne,
-      ...selectedCategoryTwoTracksFromPlaylistTwo,
-      ...selectedCategoryTwoTracksFromComp,
-      ...favTracksToAddToCat2,
-      ...releasesTracksToAddToCat2,
-    ]);
-
-    const catOneTracksUris = cat1.map((track) => track.track.uri);
-    const catTwoTracksUris = cat2.map((track) => track.track.uri);
-    const tracksUris = [...catOneTracksUris, ...catTwoTracksUris];
-    const hasDuplicate = new Set(tracksUris).size === tracksUris.length;
-
-    if (hasDuplicate) {
-      console.log('Duplicates found!');
-
-      await this.organizePlaylistV2(
-        promotionOneTracks,
-        promotionTwoTracks,
-        compilationTracks,
-        favoritesTracks,
-        releasesTracks,
-      );
-    } else {
-      try {
-        await this.updateMainPlaylist(tracksUris);
-        console.log('End of the process');
-      } catch (error) {
-        throw new HttpException(
-          error.message,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-    }
-  }
-
   async organizePlaylist(
     promotionOneTracks: SpotifyApi.PlaylistTrackObject[],
     promotionTwoTracks: SpotifyApi.PlaylistTrackObject[],
     compilationTracks: SpotifyApi.PlaylistTrackObject[],
     favoritesTracks: SpotifyApi.PlaylistTrackObject[],
     releasesTracks: SpotifyApi.PlaylistTrackObject[],
+    temporaryTracks: SpotifyApi.PlaylistTrackObject[],
   ) {
     const shuffledCompTracks = this.shuffleTracks(compilationTracks);
     const shuffledFavoritesTracks = this.shuffleTracks(favoritesTracks);
-    const shuffledReleasesTracks = this.shuffleTracks(releasesTracks);
+    const shuffledReleasesTracks = this.getNRandomTracksPerAlbum(
+      releasesTracks,
+      1,
+    ).sort(
+      (a, b) =>
+        new Date(b.track.album.release_date).getTime() -
+        new Date(a.track.album.release_date).getTime(),
+    );
     const [catOneP1Tracks, catOneP2Tracks, catOneCompTracks] =
       this.getCategoryOneTracks(
         promotionOneTracks,
@@ -245,7 +117,10 @@ export class PlaylistService {
 
     const numOfFavTracksToAddToCatOne =
       170 -
-      (catOneP1Tracks.length + catOneP2Tracks.length + catOneCompTracks.length);
+      (catOneP1Tracks.length +
+        catOneP2Tracks.length +
+        catOneCompTracks.length +
+        temporaryTracks.length);
 
     const { favTracksToAddToCatOne, catTwoTracks } =
       await this.addTracksFromFavoritesAndReleases({
@@ -262,6 +137,7 @@ export class PlaylistService {
       ...catOneP1Tracks,
       ...catOneP2Tracks,
       ...catOneCompTracks,
+      ...temporaryTracks,
       ...favTracksToAddToCatOne,
     ]);
     const updatedCatTwoTracks = this.shuffleTracks([
@@ -278,7 +154,7 @@ export class PlaylistService {
       (track) => track.track.uri,
     );
     const tracksUris = [...catOneTracksUris, ...catTwoTracksUris];
-    const hasDuplicate = new Set(tracksUris).size === tracksUris.length;
+    const hasDuplicate = new Set(tracksUris).size !== tracksUris.length;
 
     if (hasDuplicate) {
       console.log('Duplicates found!');
@@ -289,6 +165,7 @@ export class PlaylistService {
         compilationTracks,
         favoritesTracks,
         releasesTracks,
+        temporaryTracks,
       );
     } else if (tracksUris.length < 500) {
       console.log('Not enough tracks!');
@@ -299,6 +176,7 @@ export class PlaylistService {
         compilationTracks,
         favoritesTracks,
         releasesTracks,
+        temporaryTracks,
       );
     } else {
       try {

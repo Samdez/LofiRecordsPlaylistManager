@@ -27,6 +27,7 @@ export class AppService {
       const compilationPlaylistId = this.config.get('COMPILATION_PLAYLIST_ID');
       const favoritesPlaylistId = this.config.get('FAVORITES_PLAYLIST_ID');
       const releasesPlaylistId = this.config.get('RELEASES_PLAYLIST_ID');
+      const temporaryPlaylistId = this.config.get('TEMPORARY_PLAYLIST_ID');
 
       const promotionOneTracks = await this.playlistService.getPlaylistTracks(
         promotionOnePlaylistId,
@@ -43,6 +44,9 @@ export class AppService {
       const releasesTracks = await this.playlistService.getPlaylistTracks(
         releasesPlaylistId,
       );
+      const temporaryTracks = await this.playlistService.getPlaylistTracks(
+        temporaryPlaylistId,
+      );
 
       await this.playlistService.organizePlaylist(
         promotionOneTracks,
@@ -54,6 +58,7 @@ export class AppService {
             new Date(track.track.album.release_date).getTime() <
             new Date('2022-05-21').getTime(),
         ),
+        temporaryTracks,
       );
     } catch (error) {
       numOfRetrys++;
