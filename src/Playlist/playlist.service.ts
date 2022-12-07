@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from 'src/Auth/auth.service';
 import { SpotifyAPIService } from 'src/SpotifyAPI/spotifyApi.service';
+import { GoogleSheetsService } from 'src/GoogleSheets/googleSheets.service';
 
 interface ArtistTrackCount {
   [artistId: string]: { points: number; name: string };
@@ -14,6 +15,7 @@ export class PlaylistService {
   constructor(
     private readonly authService: AuthService,
     private readonly spotifyApiService: SpotifyAPIService,
+    private readonly googleSheetService: GoogleSheetsService,
   ) {}
 
   async getUserPlaylists() {
@@ -122,16 +124,19 @@ export class PlaylistService {
         catOneCompTracks.length +
         temporaryTracks.length);
 
-    const { favTracksToAddToCatOne, catTwoTracks } =
-      await this.addTracksFromFavoritesAndReleases({
-        catOneCompTracks,
-        catTwoP1Tracks,
-        catTwoP2Tracks,
-        catTwoCompTracks,
-        favoritesTracks: shuffledFavoritesTracks,
-        releasesTracks: shuffledReleasesTracks,
-        numOfFavTracksToAddToCatOne,
-      });
+    const {
+      favTracksToAddToCatOne,
+      favTracksToAddToCatTwo,
+      releasesTrackToAddToCatTwo,
+    } = await this.addTracksFromFavoritesAndReleases({
+      catOneCompTracks,
+      catTwoP1Tracks,
+      catTwoP2Tracks,
+      catTwoCompTracks,
+      favoritesTracks: shuffledFavoritesTracks,
+      releasesTracks: shuffledReleasesTracks,
+      numOfFavTracksToAddToCatOne,
+    });
 
     const updatedCatOneTracks = this.shuffleTracks([
       ...catOneP1Tracks,
@@ -144,7 +149,8 @@ export class PlaylistService {
       ...catTwoP1Tracks,
       ...catTwoP2Tracks,
       ...catTwoCompTracks,
-      ...catTwoTracks,
+      ...favTracksToAddToCatTwo,
+      ...releasesTrackToAddToCatTwo,
     ]);
 
     const catOneTracksUris = updatedCatOneTracks.map(
@@ -180,6 +186,18 @@ export class PlaylistService {
       );
     } else {
       try {
+        await this.googleSheetService.createSheet({
+          catOneP1Tracks,
+          catOneP2Tracks,
+          catOneCompTracks,
+          catOneFavTracks: favTracksToAddToCatOne,
+          catOneTempTracks: temporaryTracks,
+          catTwoP1Tracks,
+          catTwoP2Tracks,
+          catTwoCompTracks,
+          catTwoFavTracks: favTracksToAddToCatTwo,
+          catTwoReleasesTracks: releasesTrackToAddToCatTwo,
+        });
         await this.updateMainPlaylist(tracksUris);
         console.log('End of the process');
       } catch (error) {
@@ -464,7 +482,7 @@ export class PlaylistService {
       ...favTracksToAddToCatTwo,
     ];
     const numOfReleasesToAddToCat2 = 330 - catTwoWithoutReleases.length;
-    const [artistsTrackCountWithFullCat2, releasesTrackToAddToCat2] =
+    const [artistsTrackCountWithFullCat2, releasesTrackToAddToCatTwo] =
       this.createOrUpdateArtistTrackCount(
         releasesTracks,
         artistTrackCountWithCat1Favs,
@@ -473,7 +491,8 @@ export class PlaylistService {
 
     return {
       favTracksToAddToCatOne,
-      catTwoTracks: [...favTracksToAddToCatTwo, ...releasesTrackToAddToCat2],
+      favTracksToAddToCatTwo,
+      releasesTrackToAddToCatTwo,
     };
   }
 
@@ -516,5 +535,14 @@ export class PlaylistService {
     }
 
     return [newArtistsTrackCount, tracksToAdd];
+  }
+
+  parseTrack(track: SpotifyApi.PlaylistTrackObject, fromPlaylist: string) {
+    return {
+      name: track.track.name,
+      artists: track.track.artists,
+      releaseDate: track.track.album.release_date,
+      fromPlaylist,
+    };
   }
 }
