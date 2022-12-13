@@ -4,6 +4,7 @@ import {
   GoogleSpreadsheet,
   GoogleSpreadsheetWorksheet,
 } from 'google-spreadsheet';
+import { ArtistTrackCount } from 'src/Playlist/playlist.service';
 
 @Injectable()
 export class GoogleSheetsService {
@@ -64,14 +65,36 @@ export class GoogleSheetsService {
     );
   }
 
-  async createRowsForPlaylist(
-    playlistTracks: SpotifyApi.PlaylistTrackObject[],
-    fromPlaylist: string,
-    sheet: GoogleSpreadsheetWorksheet,
+  async createTracksCountSheet(
+    artistsTracksCount: { name: string; points: number }[],
   ) {
+    const creds = {
+      type: this.config.get('GOOGLE_SHEETS_TYPE'),
+      project_id: this.config.get('GOOGLE_SHEETS_PROJECT_ID'),
+      private_key_id: this.config.get('GOOGLE_SHEETS_PRIVATE_KEY_ID'),
+      private_key: this.config
+        .get('GOOGLE_SHEETS_PRIVATE_KEY')
+        .replace(/\\n/g, '\n'),
+      client_email: this.config.get('GOOGLE_SHEETS_CLIENT_EMAIL'),
+    };
+
+    const doc = new GoogleSpreadsheet(this.config.get('GOOGLE_SHEET_ID'));
+    await doc.useServiceAccountAuth(creds);
+
+    // create a sheet and set the header row
+    const sheet = await doc.addSheet({
+      headerValues: ['artist', 'points'],
+      title: `${new Date()
+        .toLocaleString('fr')
+        .replaceAll(':', '/')}/ArtistsPointsCount`,
+    });
+
     const rows = [];
-    for (const track of playlistTracks) {
-      const row = this.createRow(track, fromPlaylist);
+    for (const artist of Object.values(artistsTracksCount)) {
+      const row = {
+        artist: artist.name,
+        points: artist.points,
+      };
       rows.push(row);
     }
     try {
@@ -81,7 +104,27 @@ export class GoogleSheetsService {
     }
   }
 
-  createRow(track: SpotifyApi.PlaylistTrackObject, fromPlaylist: string) {
+  async createRowsForPlaylist(
+    playlistTracks: SpotifyApi.PlaylistTrackObject[],
+    fromPlaylist: string,
+    sheet: GoogleSpreadsheetWorksheet,
+  ) {
+    const rows = [];
+    for (const track of playlistTracks) {
+      const row = this.createPlaylistRow(track, fromPlaylist);
+      rows.push(row);
+    }
+    try {
+      await sheet.addRows(rows);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  createPlaylistRow(
+    track: SpotifyApi.PlaylistTrackObject,
+    fromPlaylist: string,
+  ) {
     return {
       artist: track.track.artists.map((el) => el.name).join(' '),
       trackName: track.track.name,

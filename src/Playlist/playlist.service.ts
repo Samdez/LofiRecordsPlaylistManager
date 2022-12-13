@@ -3,8 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from 'src/Auth/auth.service';
 import { SpotifyAPIService } from 'src/SpotifyAPI/spotifyApi.service';
 import { GoogleSheetsService } from 'src/GoogleSheets/googleSheets.service';
+import { StatsService } from 'src/Stats/stats.service';
 
-interface ArtistTrackCount {
+export interface ArtistTrackCount {
   [artistId: string]: { points: number; name: string };
 }
 
@@ -16,6 +17,7 @@ export class PlaylistService {
     private readonly authService: AuthService,
     private readonly spotifyApiService: SpotifyAPIService,
     private readonly googleSheetService: GoogleSheetsService,
+    private readonly statsService: StatsService,
   ) {}
 
   async getUserPlaylists() {
@@ -128,6 +130,7 @@ export class PlaylistService {
       favTracksToAddToCatOne,
       favTracksToAddToCatTwo,
       releasesTrackToAddToCatTwo,
+      artistsTrackCount,
     } = await this.addTracksFromFavoritesAndReleases({
       catOneCompTracks,
       catTwoP1Tracks,
@@ -198,6 +201,12 @@ export class PlaylistService {
           catTwoFavTracks: favTracksToAddToCatTwo,
           catTwoReleasesTracks: releasesTrackToAddToCatTwo,
         });
+        const orderedArtistsTrackCount =
+          this.statsService.orderArtistsByNumberOfTracks(artistsTrackCount);
+        await this.googleSheetService.createTracksCountSheet(
+          orderedArtistsTrackCount,
+        );
+
         await this.updateMainPlaylist(tracksUris);
         console.log('End of the process');
       } catch (error) {
@@ -493,6 +502,7 @@ export class PlaylistService {
       favTracksToAddToCatOne,
       favTracksToAddToCatTwo,
       releasesTrackToAddToCatTwo,
+      artistsTrackCount: artistsTrackCountWithFullCat2,
     };
   }
 
