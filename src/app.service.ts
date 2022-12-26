@@ -14,7 +14,7 @@ export class AppService {
     private spotifyApiService: SpotifyAPIService,
   ) {}
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async startProcess(numOfRetrys = 0) {
     try {
       this.spotifyApiService.initClient();
