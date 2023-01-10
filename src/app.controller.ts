@@ -2,7 +2,6 @@ import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AuthService } from './Auth/auth.service';
 import { PlaylistService } from './Playlist/playlist.service';
-import { SpotifyAPIService } from './SpotifyAPI/spotifyApi.service';
 import { UserService } from './User/user.service';
 
 @Controller()
@@ -11,7 +10,6 @@ export class AppController {
     private readonly appService: AppService,
     private readonly userService: UserService,
     private readonly playlistService: PlaylistService,
-    private readonly spotifyApiService: SpotifyAPIService,
     private readonly authService: AuthService,
   ) {}
 
