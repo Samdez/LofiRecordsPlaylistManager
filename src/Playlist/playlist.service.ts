@@ -88,6 +88,14 @@ export class PlaylistService {
     return songs;
   }
 
+  filterOutTracks(
+    tracks: SpotifyApi.PlaylistTrackObject[],
+    tracksToExclude: SpotifyApi.PlaylistTrackObject[],
+  ) {
+    const tempTracksIds = tracksToExclude.map((track) => track.track.id);
+    return tracks.filter((track) => !tempTracksIds.includes(track.track.id));
+  }
+
   async organizePlaylist(
     promotionOneTracks: SpotifyApi.PlaylistTrackObject[],
     promotionTwoTracks: SpotifyApi.PlaylistTrackObject[],
@@ -96,6 +104,20 @@ export class PlaylistService {
     releasesTracks: SpotifyApi.PlaylistTrackObject[],
     temporaryTracks: SpotifyApi.PlaylistTrackObject[],
   ) {
+    promotionOneTracks = this.filterOutTracks(
+      promotionOneTracks,
+      temporaryTracks,
+    );
+    promotionTwoTracks = this.filterOutTracks(
+      promotionTwoTracks,
+      temporaryTracks,
+    );
+    compilationTracks = this.filterOutTracks(
+      compilationTracks,
+      temporaryTracks,
+    );
+    favoritesTracks = this.filterOutTracks(favoritesTracks, temporaryTracks);
+    releasesTracks = this.filterOutTracks(releasesTracks, temporaryTracks);
     const shuffledCompTracks = this.shuffleTracks(compilationTracks);
     const shuffledFavoritesTracks = this.shuffleTracks(favoritesTracks);
     const shuffledReleasesTracks = this.getNRandomTracksPerAlbum(
@@ -118,6 +140,33 @@ export class PlaylistService {
         promotionTwoTracks,
         shuffledCompTracks,
       );
+    const catOneTracks = [
+      ...catOneP1Tracks,
+      ...catOneP2Tracks,
+      ...catOneCompTracks,
+    ];
+    const catTwoTracks = [
+      ...catTwoP1Tracks,
+      ...catTwoP2Tracks,
+      ...catTwoCompTracks,
+    ];
+
+    const favoriteTracksWithoutCatOne = this.filterOutTracks(
+      shuffledFavoritesTracks,
+      catOneTracks,
+    );
+    const favoriteTracksWithoutCatOneAndTwo = this.filterOutTracks(
+      favoriteTracksWithoutCatOne,
+      catTwoTracks,
+    );
+    const releaseTracksWithoutCatOne = this.filterOutTracks(
+      shuffledReleasesTracks,
+      catOneTracks,
+    );
+    const releaseTracksWithoutCatOneAndTwo = this.filterOutTracks(
+      releaseTracksWithoutCatOne,
+      catTwoTracks,
+    );
 
     const numOfFavTracksToAddToCatOne =
       170 -
@@ -136,8 +185,8 @@ export class PlaylistService {
       catTwoP1Tracks,
       catTwoP2Tracks,
       catTwoCompTracks,
-      favoritesTracks: shuffledFavoritesTracks,
-      releasesTracks: shuffledReleasesTracks,
+      favoritesTracks: favoriteTracksWithoutCatOneAndTwo,
+      releasesTracks: releaseTracksWithoutCatOneAndTwo,
       numOfFavTracksToAddToCatOne,
     });
 
@@ -167,6 +216,21 @@ export class PlaylistService {
 
     if (hasDuplicate) {
       console.log('Duplicates found!');
+      // const uniques = new Set(tracksUris);
+      // const duplicates = tracksUris.filter((track) => {
+      //   if (uniques.has(track)) {
+      //     uniques.delete(track);
+      //   } else {
+      //     return track;
+      //   }
+      // });
+      // console.log(duplicates);
+      // for (const duplicate of duplicates) {
+      //   const track = await this.spotifyApiService.spotifyApi.getTrack(
+      //     duplicate.split(':')[2],
+      //   );
+      //   console.log(track.body.name);
+      // }
 
       await this.organizePlaylist(
         promotionOneTracks,
