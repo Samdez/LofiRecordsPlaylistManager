@@ -253,23 +253,23 @@ export class PlaylistService {
       );
     } else {
       try {
-        await this.googleSheetService.createSheet({
-          catOneP1Tracks,
-          catOneP2Tracks,
-          catOneCompTracks,
-          catOneFavTracks: favTracksToAddToCatOne,
-          catOneTempTracks: temporaryTracks,
-          catTwoP1Tracks,
-          catTwoP2Tracks,
-          catTwoCompTracks,
-          catTwoFavTracks: favTracksToAddToCatTwo,
-          catTwoReleasesTracks: releasesTrackToAddToCatTwo,
-        });
-        const orderedArtistsTrackCount =
-          this.statsService.orderArtistsByNumberOfTracks(artistsTrackCount);
-        await this.googleSheetService.createTracksCountSheet(
-          orderedArtistsTrackCount,
-        );
+        // await this.googleSheetService.createSheet({
+        //   catOneP1Tracks,
+        //   catOneP2Tracks,
+        //   catOneCompTracks,
+        //   catOneFavTracks: favTracksToAddToCatOne,
+        //   catOneTempTracks: temporaryTracks,
+        //   catTwoP1Tracks,
+        //   catTwoP2Tracks,
+        //   catTwoCompTracks,
+        //   catTwoFavTracks: favTracksToAddToCatTwo,
+        //   catTwoReleasesTracks: releasesTrackToAddToCatTwo,
+        // });
+        // const orderedArtistsTrackCount =
+        //   this.statsService.orderArtistsByNumberOfTracks(artistsTrackCount);
+        // await this.googleSheetService.createTracksCountSheet(
+        //   orderedArtistsTrackCount,
+        // );
 
         await this.updateMainPlaylist(tracksUris);
         console.log('End of the process');
