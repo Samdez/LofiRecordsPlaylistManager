@@ -16,7 +16,6 @@ export class PlaylistService {
   constructor(
     private readonly authService: AuthService,
     private readonly spotifyApiService: SpotifyAPIService,
-    private readonly googleSheetService: GoogleSheetsService,
     private readonly statsService: StatsService,
   ) {}
 
@@ -204,6 +203,7 @@ export class PlaylistService {
       ...favTracksToAddToCatTwo,
       ...releasesTrackToAddToCatTwo,
     ]);
+    const newPlaylist = [...updatedCatOneTracks, ...updatedCatTwoTracks];
 
     const catOneTracksUris = updatedCatOneTracks.map(
       (track) => track.track.uri,
@@ -252,33 +252,12 @@ export class PlaylistService {
         temporaryTracks,
       );
     } else {
-      try {
-        await this.googleSheetService.createSheet({
-          catOneP1Tracks,
-          catOneP2Tracks,
-          catOneCompTracks,
-          catOneFavTracks: favTracksToAddToCatOne,
-          catOneTempTracks: temporaryTracks,
-          catTwoP1Tracks,
-          catTwoP2Tracks,
-          catTwoCompTracks,
-          catTwoFavTracks: favTracksToAddToCatTwo,
-          catTwoReleasesTracks: releasesTrackToAddToCatTwo,
-        });
-        const orderedArtistsTrackCount =
-          this.statsService.orderArtistsByNumberOfTracks(artistsTrackCount);
-        await this.googleSheetService.createTracksCountSheet(
-          orderedArtistsTrackCount,
-        );
-
-        await this.updateMainPlaylist(tracksUris);
-        console.log('End of the process');
-      } catch (error) {
-        throw new HttpException(
-          error.message,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+      const promises = [
+        this.updateMainPlaylist(tracksUris),
+        this.statsService.updateStats(newPlaylist),
+      ];
+      await Promise.all(promises);
+      console.log('End of the process');
     }
   }
 

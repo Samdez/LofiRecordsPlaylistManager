@@ -8,6 +8,8 @@ import { getEnvPath } from './common/helper/env.helper';
 import { AuthModule } from './Auth/auth.module';
 import { PlaylistModule } from './Playlist/playlist.module';
 import { SpotifyAPIModule } from './SpotifyAPI/spotifyApi.module';
+import { StatsModule } from './Stats/stats.module';
+import { ArtistModule } from './Artist/artist.module';
 const envFilePath: string = getEnvPath(`${__dirname}/common/envs`);
 @Module({
   imports: [
@@ -15,6 +17,7 @@ const envFilePath: string = getEnvPath(`${__dirname}/common/envs`);
     UserModule,
     PlaylistModule,
     SpotifyAPIModule,
+    StatsModule,
     ConfigModule.forRoot({ envFilePath, isGlobal: true }),
     ScheduleModule.forRoot(),
   ],
