@@ -12,9 +12,11 @@ datasource db {
 }
 
 model Playlist {
-  id        Int     @id @default(autoincrement())
-  name      String?
-  followers Int
+  id                    String                  @id @default(uuid())
+  spotifyId             String                  @unique @default(uuid())
+  name                  String
+  followers             Int
+  PlaylistTrackPosition PlaylistTrackPosition[]
 }
 
 model Artist {
@@ -27,16 +29,20 @@ model Artist {
 }
 
 model Track {
-  id        String   @id @default(uuid())
-  spotifyId String   @unique
-  name      String
-  artists   Artist[]
+  id                    String                  @id @default(uuid())
+  spotifyId             String                  @unique
+  name                  String
+  artists               Artist[]
+  PlaylistTrackPosition PlaylistTrackPosition[]
 }
 
 model PlaylistTrackPosition {
-  id         String   @id @default(uuid())
-  playlistId Int
-  trackId    Int
+  playlist   Playlist @relation(fields: [playlistId], references: [id])
+  playlistId String
+  track      Track    @relation(fields: [trackId], references: [id])
+  trackId    String
   date       DateTime
   position   Int
+
+  @@unique([trackId, playlistId, date])
 }

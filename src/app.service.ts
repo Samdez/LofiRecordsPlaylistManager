@@ -1,10 +1,8 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { PlaylistService } from './Playlist/playlist.service';
 import { SpotifyAPIService } from './SpotifyAPI/spotifyApi.service';
-import { StatsService } from './Stats/stats.service';
 
 @Injectable()
 export class AppService {
@@ -13,7 +11,6 @@ export class AppService {
   constructor(
     private readonly playlistService: PlaylistService,
     private spotifyApiService: SpotifyAPIService,
-    private readonly statsService: StatsService,
   ) {}
 
   // @Cron(CronExpression.EVERY_DAY_AT_3AM)

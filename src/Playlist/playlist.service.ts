@@ -1,8 +1,13 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from 'src/Auth/auth.service';
 import { SpotifyAPIService } from 'src/SpotifyAPI/spotifyApi.service';
-import { GoogleSheetsService } from 'src/GoogleSheets/googleSheets.service';
 import { StatsService } from 'src/Stats/stats.service';
 
 export interface ArtistTrackCount {
@@ -36,11 +41,11 @@ export class PlaylistService {
     }
   }
 
-  async getPlaylist() {
+  async getPlaylist(playlistId?: string) {
     this.spotifyApiService.initClient();
     try {
       const res = await this.spotifyApiService.spotifyApi.getPlaylist(
-        this.config.get('MAIN_PLAYLIST_ID'),
+        playlistId || this.config.get('MAIN_PLAYLIST_ID'),
       );
       return res.body;
     } catch (error) {
@@ -252,9 +257,11 @@ export class PlaylistService {
         temporaryTracks,
       );
     } else {
+      const playlistId = this.config.get('MAIN_PLAYLIST_ID');
+      const spotifyPlaylistInfo = await this.getPlaylist(playlistId);
       const promises = [
         this.updateMainPlaylist(tracksUris),
-        this.statsService.updateStats(newPlaylist),
+        this.statsService.updateStats(newPlaylist, spotifyPlaylistInfo),
       ];
       await Promise.all(promises);
       console.log('End of the process');

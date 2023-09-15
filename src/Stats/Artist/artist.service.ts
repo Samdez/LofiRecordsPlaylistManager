@@ -7,7 +7,10 @@ export class ArtistService {
   constructor(private prisma: PrismaService) {}
 
   indexArtists() {
-    return this.prisma.artist.findMany({});
+    return this.prisma.artist.findMany({
+      orderBy: { tracks: { _count: 'desc' } },
+      include: { _count: { select: { tracks: true } } },
+    });
   }
 
   getArtist(artistWhereUniqueInput: Prisma.ArtistWhereUniqueInput) {

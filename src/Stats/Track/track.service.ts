@@ -36,4 +36,24 @@ export class TrackService {
       update: trackData,
     });
   }
+
+  createTrackPlaylistPosition(
+    track: SpotifyApi.PlaylistTrackObject,
+    date: Date,
+    playlistId: string,
+    position: number,
+  ) {
+    return this.prisma.playlistTrackPosition.create({
+      data: {
+        track: { connect: { spotifyId: track.track.id } },
+        date,
+        playlist: {
+          connect: {
+            spotifyId: playlistId,
+          },
+        },
+        position: position,
+      },
+    });
+  }
 }

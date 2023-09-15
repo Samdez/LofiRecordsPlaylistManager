@@ -9,7 +9,7 @@ import { AuthModule } from './Auth/auth.module';
 import { PlaylistModule } from './Playlist/playlist.module';
 import { SpotifyAPIModule } from './SpotifyAPI/spotifyApi.module';
 import { StatsModule } from './Stats/stats.module';
-import { ArtistModule } from './Artist/artist.module';
+import { ArtistModule } from './Stats/Artist/artist.module';
 const envFilePath: string = getEnvPath(`${__dirname}/common/envs`);
 @Module({
   imports: [
